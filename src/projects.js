@@ -3,13 +3,24 @@ const makeTodo = (title, description = "none", dueDate, priority) => {
     return { title, description, dueDate, priority, isComplete };
 };
 
-const makeProject = (name) => {
 
+const makeProject = (name) => {
     let myTodos = [];
 
     return { name, myTodos };
 }
 
+const projects = (() => {
+    let projects = [];
+
+    const updateProjects = (project) => {
+        projects.push(project);
+    };
+    const getProjects = () => {
+        return { projects }
+    }
+    return {updateProjects, getProjects};
+})();
 const addTodoToProject = (project, todo) => {
     project.myTodos.push(todo);
 }
@@ -42,4 +53,4 @@ const updateTodo = () => {
         changeIsComplete,
     };
 };
-export { makeTodo, makeProject, addTodoToProject, updateTodo };
+export { makeTodo, makeProject, addTodoToProject, updateTodo , projects};
