@@ -10,6 +10,14 @@ const makeProject = (name) => {
     return { name, myTodos };
 }
 
+const removeTodo = (project, todoToRemove) => {
+    project.myTodos = project.myTodos.filter((todo)=> {
+        if (todoToRemove === todo)
+            return false;
+        return true;
+    })
+}
+
 const projects = (() => {
     let projects = [];
 
@@ -21,6 +29,7 @@ const projects = (() => {
     }
     return {updateProjects, getProjects};
 })();
+
 const addTodoToProject = (project, todo) => {
     project.myTodos.push(todo);
 }
@@ -53,4 +62,4 @@ const updateTodo = () => {
         changeIsComplete,
     };
 };
-export { makeTodo, makeProject, addTodoToProject, updateTodo , projects};
+export { makeTodo, makeProject, addTodoToProject, updateTodo, removeTodo , projects};

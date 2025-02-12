@@ -16,7 +16,6 @@ body {
     top: 10px;
     left: 180px;
     z-index: 2;
-    /* Ensure it's above the sidebar */
     background-color: #9E9E9E;
     color: white;
     border: none;
@@ -52,7 +51,7 @@ svg {
     color: red;
 }
 
-.side-bar>* {
+.side-bar *:not(svg,div) {
     padding: 8px 8px 8px 32px;
     text-wrap: nowrap;
     width: 90%;
@@ -62,13 +61,19 @@ svg {
     border: none;
     border-radius: 7px;
 }
-
-.side-bar>*:hover {
+.side-bar .projects {
+    margin: 0;
+    padding: 10px 0 0 0;
+    display: flex;
+    flex-direction: column;
+}
+.side-bar *:hover:not(div) {
     background-color: rgb(224, 223, 223);
     cursor: pointer;
 }
 
 .side-bar .my-project-title {
+    position: relative;
     margin-top: 50px;
     padding-left: 0;
     font-size: 1.2rem;
