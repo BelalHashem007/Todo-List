@@ -1,8 +1,9 @@
-import { makeTodo, makeProject, addTodoToProject, updateTodo, removeTodo, projects } from "./projects";
+import { makeTodo, makeProject, addTodoToProject, updateTodo, removeTodo, projects } from "./projectsLogic";
 import { format } from "date-fns";
-//ui
+//ui]
+let formCreated;
 const addTask = () => {
-    let formCreated;
+
     const createForm = () => {
         const dialog = document.createElement('dialog');
         const form = document.createElement('form');
@@ -34,8 +35,8 @@ const addTask = () => {
         btnContainer.classList.add('btn-container');
 
 
-
         closeBtn.textContent = "Close"; //text and attributes
+
         addBtn.textContent = "Add Task";
         priOpt1.textContent = "priority 1";
         priOpt2.textContent = "priority 2";
@@ -52,9 +53,9 @@ const addTask = () => {
         descInput.setAttribute('placeholder', 'description');
         descInput.setAttribute('maxlength', '170');
         dateInput.setAttribute('type', 'date');
-        dateInput.setAttribute('required', 'required');
         addBtn.setAttribute("type", "submit");
         closeBtn.setAttribute("type", "button");
+        dateInput.setAttribute('required', 'required');
 
 
         document.querySelector('body').appendChild(dialog);
@@ -84,9 +85,13 @@ const addTask = () => {
     }
     const addTaskBtn = document.querySelector('.add-task');
     addTaskBtn.addEventListener('click', () => {
+        if (formCreated) {
+            formCreated.dialog.remove();
+        }
         formCreated = createForm();
         formCreated.updateProjects();
         formCreated.dialog.showModal();
+        formCreated.form.removeEventListener('submit', formHandler);
         formCreated.form.addEventListener('submit', formHandler);
     });
 
@@ -110,50 +115,60 @@ const addTask = () => {
 
 const addProject = () => {
     const add = document.querySelector('.add-project');
-    const dialog = document.createElement('dialog');
-    const form = document.createElement('form');
-    const nameInput = document.createElement('input');
-    const closeBtn = document.createElement('button');
-    const addBtn = document.createElement('button');
-    const buttonContainer = document.createElement('div');
+    const createForm = () => {
+        const dialog = document.createElement('dialog');
+        const form = document.createElement('form');
+        const nameInput = document.createElement('input');
+        const closeBtn = document.createElement('button');
+        const addBtn = document.createElement('button');
+        const buttonContainer = document.createElement('div');
 
-    dialog.classList.add('add-project-dialog');
-    form.classList.add('add-project-form');
-    nameInput.classList.add('add-project-input');
-    nameInput.setAttribute('type', 'text');
-    nameInput.setAttribute('placeholder', 'Project Name');
-    nameInput.setAttribute('required', 'required');
-    closeBtn.textContent = "Close";
-    closeBtn.setAttribute('type', 'button');
-    closeBtn.classList.add('add-project-close');
-    addBtn.textContent = "Add Project";
-    addBtn.classList.add('type', 'submit');
-    addBtn.classList.add('add-project-submit');
-    buttonContainer.classList.add('add-project-btn-container');
+        dialog.classList.add('add-project-dialog');
+        form.classList.add('add-project-form');
+        nameInput.classList.add('add-project-input');
+        nameInput.setAttribute('type', 'text');
+        nameInput.setAttribute('placeholder', 'Project Name');
+        nameInput.setAttribute('required', 'required');
+        closeBtn.textContent = "Close";
+        closeBtn.setAttribute('type', 'button');
+        closeBtn.classList.add('add-project-close');
+        addBtn.textContent = "Add Project";
+        addBtn.classList.add('type', 'submit');
+        addBtn.classList.add('add-project-submit');
+        buttonContainer.classList.add('add-project-btn-container');
 
-    buttonContainer.append(closeBtn, addBtn)
-    form.append(nameInput, buttonContainer);
-    document.querySelector('body').appendChild(dialog);
-    dialog.appendChild(form);
+        buttonContainer.append(closeBtn, addBtn)
+        form.append(nameInput, buttonContainer);
+        document.querySelector('body').appendChild(dialog);
+        dialog.appendChild(form);
 
-    closeBtn.addEventListener('click', () => {
-        dialog.close();
-        form.reset();
-    });
+        closeBtn.addEventListener('click', () => {
+            dialog.close();
+            form.reset();
+        });
+        return { dialog, form, nameInput, addBtn, }
+    }
 
     const formHandler = (e) => {
         e.preventDefault();
-        projects.updateProjects(makeProject(nameInput.value));
-        dialog.close();
-        form.reset();
+        projects.updateProjects(makeProject(formCreated.nameInput.value));
+        formCreated.dialog.close();
+        formCreated.form.reset();
         ScreenController();
     }
-    form.addEventListener('submit', formHandler)
+
 
     const addHandler = () => {
-        dialog.showModal();
+        if (formCreated)
+            formCreated.dialog.remove();
+        formCreated = createForm();
+        formCreated.dialog.showModal();
+        formCreated.form.removeEventListener('submit', formHandler);
+        formCreated.form.addEventListener('submit', formHandler);
     }
     add.addEventListener('click', addHandler);
+
+    return { createForm }
 }
 const projectName = (() => {
     const name = document.createElement('div');
@@ -172,13 +187,47 @@ const ScreenController = () => {
         document.querySelector('.projects').textContent = "";
         for (const project of projects.getProjects().projects) {
             const button = document.createElement('button');
+            const deleteProject = document.createElement('div');
+            const editProject = document.createElement('div');
+            editProject.classList.add('edit-project');
+            deleteProject.classList.add('delete-project');
             button.classList.add('project-btn')
             button.textContent = "# " + project.name;
+            if (project !== projects.getProjects().projects[0])
+                button.append(deleteProject);
+            button.append(editProject);
             document.querySelector('.projects').appendChild(button);
+
+            editProject.addEventListener('click', () => {
+                if (formCreated)
+                    formCreated.dialog.remove();
+                formCreated = addProject().createForm();
+                formCreated.nameInput.value = project.name;
+                formCreated.addBtn.textContent = "Edit Project";
+                formCreated.dialog.showModal();
+                const formHandler = (e) => {
+                    e.preventDefault();
+                    projects.changeProjectName(project, formCreated.nameInput.value);
+                    myProjects();
+                    projectName.updateName("My Projects/" + formCreated.nameInput.value);
+                    formCreated.form.reset();
+                    formCreated.dialog.close();
+                    projects.populateStorage();
+                }
+                formCreated.form.removeEventListener('submit', formHandler);
+                formCreated.form.addEventListener('submit', formHandler);
+            },{once: true});
+
+            deleteProject.addEventListener('click', (e) => {
+                e.stopPropagation();
+                projects.removeProject(project);
+                showMyTodos(projects.getProjects().projects[0]);
+                myProjects();
+            });
+
             button.addEventListener('click', () => { showMyTodos(project) });
         }
     }
-    myProjects();
 
     const showMyTodos = (theProject) => {
         const content = document.querySelector('.content');
@@ -197,12 +246,13 @@ const ScreenController = () => {
             const editTodo = document.createElement('div');
             divTitle.textContent = todo.title;
             divDesc.textContent = todo.description;
-            divDate.textContent = format(todo.dueDate, "MMM d y");
+            divDate.textContent = format(todo.dueDate, "E, MMM d y");
             divPriority.textContent = todo.priority;
             deleteTodo.classList.add('delete-todo');
             editTodo.classList.add('edit-todo');
             complete.setAttribute('value', 'complete');
             complete.setAttribute('type', 'checkbox');
+            complete.classList.add('complete-todo');
             containerDateAndPri.classList.add('todo-container-date-pri');
             divTitle.classList.add('todo-title');
             divPriority.classList.add('todo-priority');
@@ -212,6 +262,7 @@ const ScreenController = () => {
             containerDateAndPri.append(divDate, divPriority)
             containerAll.append(complete, divTitle, divDesc, containerDateAndPri, deleteTodo, editTodo);
             content.append(containerAll);
+
 
 
             const priorityStyle = () => {
@@ -233,12 +284,17 @@ const ScreenController = () => {
                         break;
                 }
             }
+
             const deleteHandler = () => {
                 removeTodo(theProject, todo);
                 showMyTodos(theProject);
             }
+
+
             const editHandler = () => {
-                const formCreated = addTask().createForm();
+                if (formCreated)
+                    formCreated.dialog.remove();
+                formCreated = addTask().createForm();
                 formCreated.titleInput.value = todo.title;
                 formCreated.descInput.value = todo.description;
                 formCreated.dateInput.value = todo.dueDate;
@@ -246,15 +302,15 @@ const ScreenController = () => {
                 formCreated.updateProjects();
                 formCreated.projInput.value = theProject.name;
                 formCreated.dialog.showModal();
-                formCreated.addBtn.textContent = "Edit todo";
-
                 const formHandler = (e) => {
+                    formCreated.addBtn.textContent = "Edit todo";
+
                     e.preventDefault();
 
-                    todo.title = formCreated.titleInput.value;
-                    todo.description = formCreated.descInput.value;
-                    todo.priority = formCreated.priSelect.value;
-                    todo.dueDate = format(formCreated.dateInput.value, "MMM d y");
+                    updateTodo(todo).changeTodoTitle(formCreated.titleInput.value);
+                    updateTodo(todo).changeTodoDescription(formCreated.descInput.value);
+                    updateTodo(todo).changeTodoPriority(formCreated.priSelect.value);
+                    updateTodo(todo).changeTodoDueDate(formCreated.dateInput.value);
 
                     if (theProject.name !== formCreated.projInput.value) {
                         removeTodo(theProject, todo);
@@ -268,16 +324,23 @@ const ScreenController = () => {
                     showMyTodos(theProject);
                     formCreated.dialog.close();
                     formCreated.form.reset();
+                    formCreated = null;
+                    projects.populateStorage();
                 }
                 formCreated.form.removeEventListener('submit', formHandler);
-                formCreated.form.addEventListener('submit', formHandler);
+                formCreated.form.addEventListener('submit', formHandler, { once: true });
+
             }
+
 
             deleteTodo.addEventListener('click', deleteHandler);
             editTodo.addEventListener('click', editHandler);
             priorityStyle();
+            projects.populateStorage();
         }
     }
+    myProjects();
+    showMyTodos(projects.getProjects().projects[0]);
     return { showMyTodos }
 }
 
